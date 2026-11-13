@@ -1,5 +1,5 @@
 import React from 'react';
-import { profileData } from '../data/profileData';
+import { profileData, getDecodedEmailParts, getDecodedEmail } from '../data/profileData';
 
 interface ResumeSheetProps {
   includePrivateContact: boolean;
@@ -10,6 +10,31 @@ export const ResumeSheet: React.FC<ResumeSheetProps> = ({
   includePrivateContact,
   includePortfolioAppendix,
 }) => {
+  const { user, domain } = getDecodedEmailParts();
+
+  const handleEmailClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.location.href = `mailto:${getDecodedEmail()}`;
+  };
+
+  const renderObfuscatedEmail = () => (
+    <button
+      type="button"
+      onClick={handleEmailClick}
+      className="text-sky-700 underline cursor-pointer bg-transparent border-0 p-0 font-inherit inline"
+    >
+      <span>{user}</span>
+      <span className="hidden select-none" aria-hidden="true">
+        .nospam.invalid
+      </span>
+      <span>&#64;</span>
+      <span className="hidden select-none" aria-hidden="true">
+        ignore.
+      </span>
+      <span>{domain}</span>
+    </button>
+  );
+
   return (
     <div className="bg-white text-slate-900 p-6 sm:p-10 max-w-[210mm] mx-auto shadow-2xl print:shadow-none print:p-0 print:max-w-none rounded-xl print:rounded-none border border-slate-200 print:border-none">
       {/* Header */}
@@ -29,17 +54,12 @@ export const ResumeSheet: React.FC<ResumeSheetProps> = ({
               <div>{profileData.privateContact.address}</div>
               <div>
                 <span className="font-semibold">{profileData.privateContact.phone}</span> ·{' '}
-                <a href={`mailto:${profileData.email}`} className="text-sky-700 underline">
-                  {profileData.email}
-                </a>
+                {renderObfuscatedEmail()}
               </div>
             </>
           ) : (
             <div>
-              {profileData.publicLocation} ·{' '}
-              <a href={`mailto:${profileData.email}`} className="text-sky-700 underline">
-                {profileData.email}
-              </a>
+              {profileData.publicLocation} · {renderObfuscatedEmail()}
             </div>
           )}
           <div>
