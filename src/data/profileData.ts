@@ -61,7 +61,11 @@ export const profileData = {
     address: '49 Appletree Dr, Cherrybrook NSW 2126',
     phone: '0410 338 506',
   },
-  email: 'lamsaitat@gmail.com',
+  // Stored as char codes so the plain email string never appears in the HTML or compiled JS bundle
+  emailParts: {
+    u: [108, 97, 109, 115, 97, 105, 116, 97, 116],
+    d: [103, 109, 97, 105, 108, 46, 99, 111, 109],
+  },
   linkedin: 'https://www.linkedin.com/in/lamsaitat/',
   summary:
     'Senior Mobile & iOS Software Engineer with 15+ years of experience architecting, leading, and shipping mission-critical consumer, enterprise, and government applications. Proven track record modernising flagship banking and digital identity systems used by millions of Australians, driving multi-million-dollar cost savings, and mentoring next-generation engineering talent.',
@@ -757,4 +761,16 @@ export const profileData = {
     },
   ] as PortfolioProject[],
 };
+
+export function getDecodedEmailParts(): { user: string; domain: string } {
+  const user = String.fromCharCode(...profileData.emailParts.u);
+  const domain = String.fromCharCode(...profileData.emailParts.d);
+  return { user, domain };
+}
+
+export function getDecodedEmail(): string {
+  const { user, domain } = getDecodedEmailParts();
+  return [user, domain].join(String.fromCharCode(64));
+}
+
 
