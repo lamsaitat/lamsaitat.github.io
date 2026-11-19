@@ -1,13 +1,76 @@
 <!doctype html>
-<html lang="en" class="dark scroll-smooth">
+<html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Restore the visitor's theme choice before first paint to avoid a flash.
+      // Dark stays the default for visitors with no saved preference.
+      (function () {
+        var root = document.documentElement;
+        var theme = null;
+        try {
+          theme = localStorage.getItem('kl-portfolio-theme');
+        } catch (error) {
+          theme = null;
+        }
+        var dark = theme === 'light' ? false : true;
+        root.classList.toggle('dark', dark);
+        root.style.colorScheme = dark ? 'dark' : 'light';
+      })();
+    </script>
     <title>Sai Tat (Kelvin) Lam — Senior Software Engineer (iOS & Mobile Architecture)</title>
     <meta
       name="description"
       content="Portfolio and Resume of Sai Tat (Kelvin) Lam — Senior iOS & Mobile Software Engineer with 15+ years building high-scale apps for Commonwealth Bank, Service NSW, Network Ten, and more."
     />
+    <link rel="canonical" href="https://lamsaitat.github.io/" />
+    <meta name="author" content="Sai Tat (Kelvin) Lam" />
+    <meta name="theme-color" id="theme-color-meta" content="#020617" />
+    <meta property="og:type" content="profile" />
+    <meta property="og:title" content="Sai Tat (Kelvin) Lam — Senior Software Engineer, iOS & Mobile Architecture" />
+    <meta
+      property="og:description"
+      content="15+ years shipping high-scale iOS and mobile systems for Commonwealth Bank, Service NSW, Network Ten and more. Portfolio, case studies and resume."
+    />
+    <meta property="og:url" content="https://lamsaitat.github.io/" />
+    <meta property="og:image" content="https://lamsaitat.github.io/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Case study screenshots from apps shipped by Sai Tat (Kelvin) Lam" />
+    <meta property="profile:first_name" content="Sai Tat" />
+    <meta property="profile:last_name" content="Lam" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Sai Tat (Kelvin) Lam — Senior Software Engineer, iOS & Mobile Architecture" />
+    <meta
+      name="twitter:description"
+      content="15+ years shipping high-scale iOS and mobile systems for Commonwealth Bank, Service NSW, Network Ten and more."
+    />
+    <meta name="twitter:image" content="https://lamsaitat.github.io/og-image.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Sai Tat (Kelvin) Lam",
+        "jobTitle": "Senior Software Engineer, iOS & Mobile Architecture",
+        "url": "https://lamsaitat.github.io/",
+        "sameAs": ["https://www.linkedin.com/in/lamsaitat/"],
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Sydney",
+          "addressCountry": "AU"
+        },
+        "knowsAbout": [
+          "iOS",
+          "SwiftUI",
+          "Swift",
+          "Mobile architecture",
+          "CI/CD",
+          "Digital identity",
+          "Banking applications"
+        ]
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,7 +78,9 @@
       rel="stylesheet"
     />
   </head>
-  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-sky-500/30 selection:text-sky-200">
+  <body
+    class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased selection:bg-sky-500/30 selection:text-sky-200"
+  >
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Download,
   FileText,
@@ -23,33 +23,77 @@ import {
   Copy,
   Check,
   Eye,
+  Menu,
+  AlertCircle,
 } from 'lucide-react';
 import { profileData, PortfolioProject, getDecodedEmail } from './data/profileData';
 import { ResumeSheet } from './components/ResumeSheet';
 
+const THEME_STORAGE_KEY = 'kl-portfolio-theme';
+
+/**
+ * Copies text, falling back to the legacy execCommand path when the async
+ * clipboard API is unavailable (insecure origin, denied permission, older
+ * browsers). Returns false so callers can show an honest failure state.
+ */
+async function copyText(text: string): Promise<boolean> {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // fall through to the legacy path
+    }
+  }
+
+  try {
+    const field = document.createElement('textarea');
+    field.value = text;
+    field.setAttribute('readonly', '');
+    field.style.position = 'fixed';
+    field.style.opacity = '0';
+    field.style.pointerEvents = 'none';
+    document.body.appendChild(field);
+    field.select();
+    const copied = document.execCommand('copy');
+    document.body.removeChild(field);
+    return copied;
+  } catch {
+    return false;
+  }
+}
+
 export function App() {
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState<boolean>(() =>
+    typeof document !== 'undefined' && document.documentElement.classList.contains('dark'),
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [includePrivateContact, setIncludePrivateContact] = useState(true);
   const [includePortfolioAppendix, setIncludePortfolioAppendix] = useState(false);
   const [revealedEmail, setRevealedEmail] = useState<string | null>(null);
   const [emailCopied, setEmailCopied] = useState(false);
+  const [emailCopyFailed, setEmailCopyFailed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<{
     src: string;
     title: string;
   } | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState<Record<string, number>>({});
 
+  const resumeModalRef = useRef<HTMLDivElement>(null);
+  const resumeCloseRef = useRef<HTMLButtonElement>(null);
+  const lightboxRef = useRef<HTMLDivElement>(null);
+  const lightboxCloseRef = useRef<HTMLButtonElement>(null);
+
   const handleRevealAndCopyEmail = async () => {
     const decoded = getDecodedEmail();
     setRevealedEmail(decoded);
-    try {
-      await navigator.clipboard.writeText(decoded);
-      setEmailCopied(true);
+    const copied = await copyText(decoded);
+    setEmailCopied(copied);
+    setEmailCopyFailed(!copied);
+    if (copied) {
       setTimeout(() => setEmailCopied(false), 2500);
-    } catch {
-      // Clipboard API fallback if blocked
     }
   };
 
@@ -60,12 +104,72 @@ export function App() {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (darkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
+    root.classList.toggle('dark', darkMode);
+    root.style.colorScheme = darkMode ? 'dark' : 'light';
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, darkMode ? 'dark' : 'light');
+    } catch {
+      // private mode or storage disabled
     }
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    themeMeta?.setAttribute('content', darkMode ? '#020617' : '#f8fafc');
   }, [darkMode]);
+
+  const anyOverlayOpen = showResumeModal || lightboxImage !== null;
+
+  // Escape closes the open overlay, focus is trapped inside it, and background
+  // scrolling is locked while it is displayed.
+  useEffect(() => {
+    if (!anyOverlayOpen) return;
+
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const container = lightboxImage ? lightboxRef.current : resumeModalRef.current;
+    const initialFocus = lightboxImage ? lightboxCloseRef.current : resumeCloseRef.current;
+    initialFocus?.focus();
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        if (lightboxImage) {
+          setLightboxImage(null);
+        } else {
+          setShowResumeModal(false);
+        }
+        return;
+      }
+
+      if (event.key !== 'Tab' || !container) return;
+
+      const focusable = Array.from(
+        container.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((element) => element.offsetParent !== null);
+
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus?.();
+    };
+  }, [anyOverlayOpen, lightboxImage, showResumeModal]);
 
   const featuredProjects = profileData.projects.filter((p) => p.featured);
   const filteredProjects =
@@ -137,8 +241,20 @@ export function App() {
 
             <div className="flex items-center gap-2.5">
               <button
+                type="button"
+                onClick={() => setMobileNavOpen((open) => !open)}
+                aria-label={mobileNavOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                aria-expanded={mobileNavOpen}
+                aria-controls="mobile-nav"
+                className="md:hidden p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors cursor-pointer"
+              >
+                {mobileNavOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              </button>
+
+              <button
                 onClick={() => setDarkMode(!darkMode)}
                 aria-label="Toggle theme"
+                aria-pressed={darkMode}
                 className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors cursor-pointer"
                 title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
@@ -163,6 +279,33 @@ export function App() {
               </a>
             </div>
           </div>
+
+          {/* Mobile navigation (the desktop nav is hidden below md) */}
+          {mobileNavOpen && (
+            <nav
+              id="mobile-nav"
+              aria-label="Site sections"
+              className="md:hidden border-t border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl"
+            >
+              <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+                {[
+                  { href: '#case-studies', label: 'Case Studies' },
+                  { href: '#experience', label: 'Experience' },
+                  { href: '#archive', label: `App Archive (${profileData.projects.length})` },
+                  { href: '#skills', label: 'Skills & Awards' },
+                ].map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileNavOpen(false)}
+                    className="rounded-lg px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-sky-600 dark:hover:text-sky-400 transition-colors"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+              </div>
+            </nav>
+          )}
         </header>
 
         {/* Hero Section */}
@@ -213,6 +356,11 @@ export function App() {
                         <Check className="w-3 h-3 text-emerald-500" />
                         <span className="text-emerald-600 dark:text-emerald-400">Copied!</span>
                       </>
+                    ) : emailCopyFailed ? (
+                      <>
+                        <AlertCircle className="w-3 h-3 text-amber-500" />
+                        <span className="text-amber-600 dark:text-amber-400">Select to copy</span>
+                      </>
                     ) : (
                       <>
                         <Copy className="w-3 h-3" />
@@ -220,6 +368,10 @@ export function App() {
                       </>
                     )}
                   </button>
+                  <span className="sr-only" role="status" aria-live="polite">
+                    {emailCopied ? 'Email address copied to clipboard' : ''}
+                    {emailCopyFailed ? 'Email address revealed but the clipboard was blocked' : ''}
+                  </span>
                 </div>
               ) : (
                 <button
@@ -237,7 +389,7 @@ export function App() {
               <a
                 href={profileData.linkedin}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 hover:text-sky-500 dark:hover:text-sky-400 transition-colors font-medium"
               >
                 <ExternalLink className="w-4 h-4 text-sky-500" />
@@ -398,12 +550,12 @@ export function App() {
                               key={lk.url}
                               href={lk.url}
                               target="_blank"
-                              rel="noreferrer"
+                              rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 dark:bg-slate-800 text-white hover:bg-sky-600 dark:hover:bg-sky-500 dark:hover:text-slate-950 transition-colors"
                             >
-                              <Smartphone className="w-3.5 h-3.5" />
+                              <Smartphone className="w-3.5 h-3.5" aria-hidden="true" />
                               View on {lk.label}
-                              <ExternalLink className="w-3 h-3 opacity-75" />
+                              <ExternalLink className="w-3 h-3 opacity-75" aria-hidden="true" />
                             </a>
                           ))}
                         </div>
@@ -412,17 +564,20 @@ export function App() {
 
                     {/* Right Visual Showcase Column (5 cols) */}
                     <div className="lg:col-span-5 bg-slate-100/70 dark:bg-slate-950/70 border-t lg:border-t-0 lg:border-l border-slate-200/80 dark:border-slate-800/80 p-6 flex flex-col items-center justify-center">
-                      <div
+                      <button
+                        type="button"
                         onClick={() =>
                           setLightboxImage({ src: currentImg, title: project.name })
                         }
+                        aria-label={`Enlarge ${project.name} screenshot`}
                         className="relative group/img cursor-pointer rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-900/40 shadow-lg max-h-[340px] flex items-center justify-center"
                       >
                         <img
                           src={currentImg}
-                          alt={project.name}
+                          alt={`${project.name} screenshot`}
                           className="max-h-[320px] w-auto object-contain transition-transform duration-300 group-hover/img:scale-[1.02]"
                           loading="lazy"
+                          decoding="async"
                         />
                         <div className="absolute inset-0 bg-slate-950/0 group-hover/img:bg-slate-950/30 transition-colors flex items-center justify-center">
                           <span className="opacity-0 group-hover/img:opacity-100 transition-opacity inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900/90 text-white text-xs font-medium shadow-lg">
@@ -430,7 +585,7 @@ export function App() {
                             Enlarge Screenshot
                           </span>
                         </div>
-                      </div>
+                      </button>
 
                       {/* Thumbnail Selector if Multiple Screenshots */}
                       {project.images.length > 1 && (
@@ -440,12 +595,15 @@ export function App() {
                             return (
                               <button
                                 key={img}
+                                type="button"
                                 onClick={() =>
                                   setActiveImageIndex((prev) => ({
                                     ...prev,
                                     [project.id]: idx,
                                   }))
                                 }
+                                aria-label={`Show screenshot ${idx + 1} of ${project.images.length} for ${project.name}`}
+                                aria-pressed={isSelected}
                                 className={`h-12 w-16 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
                                   isSelected
                                     ? 'border-sky-500 scale-105 shadow-sm'
@@ -574,7 +732,9 @@ export function App() {
               ].map((cat) => (
                 <button
                   key={cat.id}
+                  type="button"
                   onClick={() => setSelectedCategory(cat.id)}
+                  aria-pressed={selectedCategory === cat.id}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     selectedCategory === cat.id
                       ? 'bg-sky-500 text-slate-950 shadow-sm'
@@ -587,7 +747,7 @@ export function App() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" aria-live="polite">
             {filteredProjects.map((proj) => (
               <div
                 key={proj.id}
@@ -596,24 +756,27 @@ export function App() {
                 <div>
                   {/* Screenshot Header */}
                   {proj.images.length > 0 && (
-                    <div
+                    <button
+                      type="button"
                       onClick={() =>
                         setLightboxImage({ src: proj.images[0], title: proj.name })
                       }
+                      aria-label={`Enlarge ${proj.name} screenshot`}
                       className="relative h-48 w-full bg-slate-100 dark:bg-slate-950 border-b border-slate-200/70 dark:border-slate-800/70 flex items-center justify-center p-3 cursor-pointer group/cardimg overflow-hidden"
                     >
                       <img
                         src={proj.images[0]}
-                        alt={proj.name}
+                        alt={`${proj.name} screenshot`}
                         className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover/cardimg:scale-105"
                         loading="lazy"
+                        decoding="async"
                       />
                       {proj.images.length > 1 && (
                         <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-slate-900/80 text-white text-[10px] font-mono">
                           +{proj.images.length - 1} more
                         </span>
                       )}
-                    </div>
+                    </button>
                   )}
 
                   <div className="p-5">
@@ -656,11 +819,11 @@ export function App() {
                     <a
                       href={proj.links[0].url}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline"
                     >
                       {proj.links[0].label}
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
                     </a>
                   )}
                 </div>
@@ -826,6 +989,11 @@ export function App() {
                         <Check className="w-3 h-3 text-emerald-500" />
                         <span>Copied!</span>
                       </>
+                    ) : emailCopyFailed ? (
+                      <>
+                        <AlertCircle className="w-3 h-3 text-amber-500" />
+                        <span>Select to copy</span>
+                      </>
                     ) : (
                       <>
                         <Copy className="w-3 h-3" />
@@ -833,6 +1001,10 @@ export function App() {
                       </>
                     )}
                   </button>
+                  <span className="sr-only" role="status" aria-live="polite">
+                    {emailCopied ? 'Email address copied to clipboard' : ''}
+                    {emailCopyFailed ? 'Email address revealed but the clipboard was blocked' : ''}
+                  </span>
                 </div>
               ) : (
                 <button
@@ -851,6 +1023,10 @@ export function App() {
         {/* Lightbox Modal for Screenshots */}
         {lightboxImage && (
           <div
+            ref={lightboxRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${lightboxImage.title} screenshot`}
             onClick={() => setLightboxImage(null)}
             className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4"
           >
@@ -859,14 +1035,17 @@ export function App() {
               className="relative max-w-4xl max-h-[90vh] flex flex-col items-center"
             >
               <button
+                ref={lightboxCloseRef}
+                type="button"
                 onClick={() => setLightboxImage(null)}
+                aria-label="Close screenshot"
                 className="absolute -top-10 right-0 inline-flex items-center gap-1 text-xs font-semibold text-slate-300 hover:text-white cursor-pointer"
               >
-                <X className="w-5 h-5" /> Close
+                <X className="w-5 h-5" aria-hidden="true" /> Close
               </button>
               <img
                 src={lightboxImage.src}
-                alt={lightboxImage.title}
+                alt={`${lightboxImage.title} screenshot`}
                 className="max-h-[82vh] w-auto rounded-2xl border border-slate-800 shadow-2xl object-contain bg-slate-900"
               />
               <div className="mt-3 text-sm font-semibold text-slate-200">
@@ -878,8 +1057,18 @@ export function App() {
 
         {/* Interactive Resume Preview & Custom PDF Export Modal */}
         {showResumeModal && (
-          <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6">
+          <div
+            ref={resumeModalRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="resume-modal-title"
+            className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm overflow-y-auto p-3 sm:p-6"
+          >
             <div className="mx-auto max-w-4xl">
+              <h2 id="resume-modal-title" className="sr-only">
+                Resume preview and PDF export
+              </h2>
+
               {/* Control Bar */}
               <div className="sticky top-2 z-10 mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-700 bg-slate-900/95 px-4 py-3 text-white shadow-xl backdrop-blur-md">
                 <div className="flex flex-wrap items-center gap-4 text-xs">
@@ -911,26 +1100,31 @@ export function App() {
                   <a
                     href="Sai_Tat_Kelvin_Lam_Resume.pdf"
                     download="Sai_Tat_Kelvin_Lam_Resume.pdf"
+                    title="Downloads the standard PDF file; the options above only apply to the printed sheet"
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-500 hover:bg-sky-400 text-slate-950 transition-colors"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                    Direct Download PDF
+                    <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                    Standard PDF
                   </a>
 
                   <button
+                    type="button"
                     onClick={handlePrintPdf}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-colors cursor-pointer"
                   >
-                    <Printer className="w-3.5 h-3.5" />
+                    <Printer className="w-3.5 h-3.5" aria-hidden="true" />
                     Print / Save Custom PDF
                   </button>
 
                   <button
+                    ref={resumeCloseRef}
+                    type="button"
                     onClick={() => setShowResumeModal(false)}
+                    aria-label="Close resume preview"
                     className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
                     title="Close Preview"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-4 h-4" aria-hidden="true" />
                   </button>
                 </div>
               </div>

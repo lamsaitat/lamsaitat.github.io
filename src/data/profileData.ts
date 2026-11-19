@@ -385,7 +385,7 @@ export const profileData = {
           url: 'https://apps.apple.com/au/app/commbiz/id606702405',
         },
       ],
-      images: ['images/portfolio/image15.png'],
+      images: ['images/portfolio/image15.webp'],
     },
     {
       id: 'commbank-ios',
@@ -413,7 +413,7 @@ export const profileData = {
           url: 'https://apps.apple.com/au/app/commbank/id310251202',
         },
       ],
-      images: ['images/portfolio/image29.png'],
+      images: ['images/portfolio/image29.webp'],
     },
     {
       id: 'service-nsw-app',
@@ -441,7 +441,7 @@ export const profileData = {
           url: 'https://apps.apple.com/au/app/service-nsw/id577283433',
         },
       ],
-      images: ['images/portfolio/image10.png', 'images/portfolio/image5.png'],
+      images: ['images/portfolio/image10.webp', 'images/portfolio/image5.webp'],
     },
     {
       id: 'tenplay-ios',
@@ -469,10 +469,10 @@ export const profileData = {
         },
       ],
       images: [
-        'images/portfolio/image24.jpg',
-        'images/portfolio/image8.jpg',
-        'images/portfolio/image2.jpg',
-        'images/portfolio/image22.png',
+        'images/portfolio/image24.webp',
+        'images/portfolio/image8.webp',
+        'images/portfolio/image2.webp',
+        'images/portfolio/image22.webp',
       ],
     },
     {
@@ -495,7 +495,7 @@ export const profileData = {
       ],
       metrics: ['Dublin Web Summit 2014', '<2hr White-Label Builds'],
       links: [],
-      images: ['images/portfolio/image6.png', 'images/portfolio/image35.png'],
+      images: ['images/portfolio/image6.webp', 'images/portfolio/image35.webp'],
     },
     {
       id: 'objective-connect',
@@ -522,9 +522,9 @@ export const profileData = {
         },
       ],
       images: [
-        'images/portfolio/image16.jpg',
-        'images/portfolio/image30.jpg',
-        'images/portfolio/image25.jpg',
+        'images/portfolio/image16.webp',
+        'images/portfolio/image30.webp',
+        'images/portfolio/image25.webp',
       ],
     },
     {
@@ -545,7 +545,7 @@ export const profileData = {
           url: 'https://itunes.apple.com/au/app/mynder-book-babysitters-easily/id929640837?mt=8',
         },
       ],
-      images: ['images/portfolio/image26.png', 'images/portfolio/image3.png'],
+      images: ['images/portfolio/image26.webp', 'images/portfolio/image3.webp'],
     },
     {
       id: 'sports-video-prototype',
@@ -561,9 +561,9 @@ export const profileData = {
         'Pre-sales interactive prototype built to showcase automated curation of sports video channels and smooth remote video playback from multiple MRSS feeds.',
       links: [],
       images: [
-        'images/portfolio/image13.png',
-        'images/portfolio/image33.png',
-        'images/portfolio/image34.png',
+        'images/portfolio/image13.webp',
+        'images/portfolio/image33.webp',
+        'images/portfolio/image34.webp',
       ],
     },
     {
@@ -585,9 +585,9 @@ export const profileData = {
         },
       ],
       images: [
-        'images/portfolio/image20.jpg',
-        'images/portfolio/image14.jpg',
-        'images/portfolio/image31.jpg',
+        'images/portfolio/image20.webp',
+        'images/portfolio/image14.webp',
+        'images/portfolio/image31.webp',
       ],
     },
     {
@@ -608,7 +608,7 @@ export const profileData = {
           url: 'https://itunes.apple.com/us/app/loverly-weddings/id619474897?mt=8',
         },
       ],
-      images: ['images/portfolio/image1.jpg', 'images/portfolio/image18.jpg'],
+      images: ['images/portfolio/image1.webp', 'images/portfolio/image18.webp'],
     },
     {
       id: 'excel-naplan',
@@ -629,10 +629,10 @@ export const profileData = {
         },
       ],
       images: [
-        'images/portfolio/image12.png',
-        'images/portfolio/image21.png',
-        'images/portfolio/image32.png',
-        'images/portfolio/image19.png',
+        'images/portfolio/image12.webp',
+        'images/portfolio/image21.webp',
+        'images/portfolio/image32.webp',
+        'images/portfolio/image19.webp',
       ],
     },
     {
@@ -676,7 +676,7 @@ export const profileData = {
           url: 'https://itunes.apple.com/au/app/eagle-boys/id557825764?mt=8',
         },
       ],
-      images: ['images/portfolio/image4.jpg', 'images/portfolio/image17.jpg'],
+      images: ['images/portfolio/image4.webp', 'images/portfolio/image17.webp'],
     },
     {
       id: '1000-places',
@@ -697,10 +697,10 @@ export const profileData = {
       links: [
         {
           label: 'App Store',
-          url: 'http://itunes.apple.com/au/app/1000-places-to-see-before/id479543504?mt=8',
+          url: 'https://itunes.apple.com/au/app/1000-places-to-see-before/id479543504?mt=8',
         },
       ],
-      images: ['images/portfolio/image28.jpg'],
+      images: ['images/portfolio/image28.webp'],
     },
     {
       id: 'aarp-ipad',
@@ -715,7 +715,7 @@ export const profileData = {
       description:
         'Delivered live REST feeds of AARP articles, recipes, videos, and member benefits with offline bookmarking, location-based job/volunteer search, and live streaming radio.',
       links: [],
-      images: ['images/portfolio/image7.png'],
+      images: ['images/portfolio/image7.webp'],
     },
     {
       id: 'nps-medicines',
@@ -736,10 +736,10 @@ export const profileData = {
       links: [
         {
           label: 'App Store',
-          url: 'http://itunes.apple.com/au/app/medicines-list/id440111671?mt=8',
+          url: 'https://itunes.apple.com/au/app/medicines-list/id440111671?mt=8',
         },
       ],
-      images: ['images/portfolio/image27.png'],
+      images: ['images/portfolio/image27.webp'],
     },
     {
       id: 'hilton-surfers-paradise',
@@ -757,7 +757,7 @@ export const profileData = {
         'Finalist — Field Services Category, 2011 Australian Mobile Awards.',
       ],
       links: [],
-      images: ['images/portfolio/image23.png', 'images/portfolio/image11.png'],
+      images: ['images/portfolio/image23.webp', 'images/portfolio/image11.webp'],
     },
   ] as PortfolioProject[],
 };

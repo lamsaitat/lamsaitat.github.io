@@ -21,7 +21,7 @@ export const ResumeSheet: React.FC<ResumeSheetProps> = ({
     <button
       type="button"
       onClick={handleEmailClick}
-      className="text-sky-700 underline cursor-pointer bg-transparent border-0 p-0 font-inherit inline"
+      className="text-sky-700 underline cursor-pointer bg-transparent border-0 p-0 inline"
     >
       <span>{user}</span>
       <span className="hidden select-none" aria-hidden="true">
@@ -66,7 +66,7 @@ export const ResumeSheet: React.FC<ResumeSheetProps> = ({
             <a
               href={profileData.linkedin}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="text-sky-700 underline"
             >
               linkedin.com/in/lamsaitat
